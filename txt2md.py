@@ -83,11 +83,19 @@ class TXT2Markdown:
                     if line_type == 'empty':
                         processed_lines.append(line)
                     elif line_type == 'heading':
-                        # Main heading (level 2)
-                        processed_lines.append(f"## {line.strip()}")
+                        # Main heading (level 2) - check if it already has markdown heading markers
+                        stripped = line.strip()
+                        if stripped.startswith('#'):
+                            processed_lines.append(line)
+                        else:
+                            processed_lines.append(f"## {stripped}")
                     elif line_type == 'subheading':
-                        # Subheading (level 3)
-                        processed_lines.append(f"### {line.strip()}")
+                        # Subheading (level 3) - check if it already has markdown heading markers
+                        stripped = line.strip()
+                        if stripped.startswith('#'):
+                            processed_lines.append(line)
+                        else:
+                            processed_lines.append(f"### {stripped}")
                     else:
                         # Regular content - preserve as is
                         processed_lines.append(line)
@@ -117,7 +125,6 @@ class TXT2Markdown:
             if self.output_path:
                 with open(self.output_path, 'w', encoding='utf-8') as f:
                     f.write(markdown)
-                print(f"Successfully converted {self.input_path} to {self.output_path}")
             
             return markdown
             

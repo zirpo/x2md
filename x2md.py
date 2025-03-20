@@ -20,6 +20,8 @@ import sys
 from pathlib import Path
 import mimetypes
 import importlib
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Dict, Optional, Tuple
 
 # Import existing converters
 # We use try/except to handle potential import errors gracefully
@@ -153,33 +155,177 @@ class X2Markdown:
             raise
 
 
-def main():
-    """Parse command line arguments and convert file to Markdown."""
-    parser = argparse.ArgumentParser(description='Convert various file formats to Markdown')
-    parser.add_argument('input_file', help='Input file')
-    parser.add_argument('-o', '--output', help='Output Markdown file')
-    parser.add_argument('-s', '--sheet', help='Specific sheet to convert (for Excel files)')
-    args = parser.parse_args()
+def get_supported_files(directory: Path, recursive: bool = False) -> List[Path]:
+    """
+    Get all supported files in a directory.
     
+    Args:
+        directory (Path): Directory to search
+        recursive (bool): Whether to search recursively
+        
+    Returns:
+        List[Path]: List of supported files
+    """
+    # Define supported extensions
+    supported_extensions = {
+        '.csv', '.txt', '.xlsx', '.xls', '.xlsm', '.docx', '.pdf', '.msg'
+    }
+    
+    files = []
+    
+    # Use glob pattern based on recursion flag
+    pattern = '**/*' if recursive else '*'
+    
+    # Find all files with supported extensions
+    for ext in supported_extensions:
+        files.extend(directory.glob(f'{pattern}{ext}'))
+    
+    return sorted(files)
+
+
+def process_single_file(input_path: Path, output_path: Optional[Path], sheet: Optional[str]) -> int:
+    """
+    Process a single file.
+    
+    Args:
+        input_path (Path): Path to input file
+        output_path (Optional[Path]): Path to output file
+        sheet (Optional[str]): Sheet name for Excel files
+        
+    Returns:
+        int: 0 for success, 1 for failure
+    """
     try:
-        # Automatically determine output file name if not specified
-        if not args.output:
-            input_path = Path(args.input_file)
-            output_path = input_path.with_suffix('.md')
-        else:
-            output_path = args.output
-            
         # Create converter and convert file
-        converter = X2Markdown(args.input_file, output_path, sheet=args.sheet)
+        converter = X2Markdown(input_path, output_path, sheet=sheet)
         result = converter.convert()
         
-        if not args.output:
+        if output_path is None:
             print(result)
+        else:
+            print(f"Successfully converted {input_path} to {output_path}")
             
         return 0
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
+
+
+def process_directory(
+    input_dir: Path, 
+    output_dir: Optional[Path], 
+    recursive: bool = False, 
+    sheet: Optional[str] = None,
+    max_workers: int = 4
+) -> Tuple[int, int, int]:
+    """
+    Process all supported files in a directory.
+    
+    Args:
+        input_dir (Path): Input directory
+        output_dir (Optional[Path]): Output directory
+        recursive (bool): Whether to process subdirectories
+        sheet (Optional[str]): Sheet name for Excel files
+        max_workers (int): Maximum number of worker threads
+        
+    Returns:
+        Tuple[int, int, int]: (success_count, error_count, skipped_count)
+    """
+    # Get all supported files
+    files = get_supported_files(input_dir, recursive)
+    
+    if not files:
+        print(f"No supported files found in {input_dir}")
+        return 0, 0, 0
+    
+    # Create output directory if it doesn't exist
+    if output_dir:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    
+    success_count = 0
+    error_count = 0
+    skipped_count = 0
+    
+    print(f"Found {len(files)} supported files in {input_dir}")
+    
+    # Process files
+    for file_path in files:
+        try:
+            # Determine output path
+            if output_dir:
+                # Preserve directory structure if recursive
+                if recursive:
+                    rel_path = file_path.relative_to(input_dir)
+                    out_path = output_dir / rel_path.with_suffix('.md')
+                    # Create parent directories if needed
+                    out_path.parent.mkdir(parents=True, exist_ok=True)
+                else:
+                    out_path = output_dir / file_path.with_suffix('.md').name
+            else:
+                # If no output directory specified, use same directory as input
+                out_path = file_path.with_suffix('.md')
+        
+            # Process file
+            result = process_single_file(file_path, out_path, sheet)
+        
+            if result == 0:
+                success_count += 1
+            else:
+                error_count += 1
+            
+        except Exception as e:
+            print(f"Error processing {file_path}: {e}", file=sys.stderr)
+            error_count += 1
+    
+    return success_count, error_count, skipped_count
+
+
+def main():
+    """Parse command line arguments and convert file(s) to Markdown."""
+    parser = argparse.ArgumentParser(description='Convert various file formats to Markdown')
+    parser.add_argument('input_path', help='Input file or directory')
+    parser.add_argument('-o', '--output', help='Output Markdown file (for single file conversion)')
+    parser.add_argument('-d', '--output-dir', help='Output directory (for directory conversion)')
+    parser.add_argument('-s', '--sheet', help='Specific sheet to convert (for Excel files)')
+    parser.add_argument('-r', '--recursive', action='store_true', help='Process subdirectories recursively')
+    args = parser.parse_args()
+    
+    input_path = Path(args.input_path)
+    
+    # Check if input path exists
+    if not input_path.exists():
+        print(f"Error: Input path does not exist: {input_path}", file=sys.stderr)
+        return 1
+    
+    # If input is a directory, process all files
+    if input_path.is_dir():
+        output_dir = Path(args.output_dir) if args.output_dir else None
+        
+        # If output is specified but not a directory, show error
+        if args.output and not args.output_dir:
+            print("Error: When processing a directory, use -d/--output-dir instead of -o/--output", file=sys.stderr)
+            return 1
+            
+        success, errors, skipped = process_directory(
+            input_path, 
+            output_dir, 
+            args.recursive, 
+            args.sheet
+        )
+        
+        print(f"\nSummary: {success} files converted, {errors} errors, {skipped} skipped")
+        return 0 if errors == 0 else 1
+    else:
+        # Process single file
+        if args.output_dir:
+            # If output directory is specified for a single file
+            output_dir = Path(args.output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / input_path.with_suffix('.md').name
+        else:
+            output_path = Path(args.output) if args.output else input_path.with_suffix('.md')
+            
+        return process_single_file(input_path, output_path, args.sheet)
 
 
 if __name__ == "__main__":

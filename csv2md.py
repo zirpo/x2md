@@ -51,7 +51,6 @@ class CSV2Markdown:
             if self.output_path:
                 with open(self.output_path, 'w', encoding='utf-8') as f:
                     f.write(markdown)
-                print(f"Successfully converted {self.input_path} to {self.output_path}")
             
             return markdown
             
