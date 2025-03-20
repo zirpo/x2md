@@ -17,15 +17,16 @@ x2md is a simple tool that converts various file formats into Markdown - a light
 ### Installation
 
 1. Make sure you have Python 3.8 or newer installed
-2. Install x2md:
+2. If you've downloaded the source code (which is currently the only way to install):
    ```
-   pip install x2md
+   # Navigate to the x2md directory
+   cd path/to/x2md
+   
+   # Install in development mode
+   python -m pip install -e .
    ```
 
-Alternatively, if you've downloaded the source code:
-```
-python -m pip install -e .
-```
+Note: The package is not yet available on PyPI, so you cannot install it with `pip install x2md`.
 
 ### Basic Usage
 
