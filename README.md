@@ -40,7 +40,7 @@ Convert various file formats to Markdown easily.
 The main `x2md.py` script detects file type and converts accordingly:
 
 ```bash
-# Basic usage
+# Basic usage - single file
 python x2md.py test/input/test_document.txt
 
 # Specify output file
@@ -48,6 +48,16 @@ python x2md.py test/input/test_data.csv -o test/output/result.md
 
 # Excel specific: convert a particular sheet
 python x2md.py test/input/test_data.xlsx -s "Sales" -o test/output/result_excel.md
+
+# Process all files in a directory (with automatic organization)
+python x2md.py test/input
+# This will create test/input/md_results for output and move originals to test/input/processed
+
+# Process all files in a directory with a custom output location
+python x2md.py test/input -d test/output
+
+# Process all files in a directory and its subdirectories
+python x2md.py test/input -r
 ```
 
 ### Format-Specific Converters

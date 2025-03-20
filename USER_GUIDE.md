@@ -30,6 +30,8 @@ Note: The package is not yet available on PyPI, so you cannot install it with `p
 
 ### Basic Usage
 
+#### Converting a Single File
+
 Convert any supported file with a single command:
 
 ```
@@ -41,6 +43,48 @@ The result will be displayed on screen. To save to a file, add `-o output.md`:
 ```
 x2md your_file.extension -o result.md
 ```
+
+#### Converting Multiple Files in a Directory
+
+Process all supported files in a directory:
+
+```
+x2md path/to/directory
+```
+
+By default, this will:
+1. Convert all supported files in the directory
+2. Save the converted Markdown files to a `md_results` subdirectory
+3. Move the original files to a `processed` subdirectory
+
+You can also specify a custom output directory:
+
+```
+x2md path/to/directory -d custom_output_directory
+```
+
+To process subdirectories recursively, add the `-r` flag:
+
+```
+x2md path/to/directory -r
+```
+
+This will maintain the directory structure in both the `md_results` and `processed` directories.
+
+#### Automatic File Organization
+
+When converting a single file without specifying an output location:
+
+```
+x2md your_file.extension
+```
+
+The tool will:
+1. Create a `md_results` directory in the same location as the input file
+2. Save the converted Markdown file there
+3. Move the original file to a `processed` directory
+
+This automatic organization helps keep your files tidy and well-organized.
 
 ## Supported File Types
 

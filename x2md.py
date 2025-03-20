@@ -17,6 +17,7 @@ Future support planned for:
 import argparse
 import os
 import sys
+import shutil
 from pathlib import Path
 import mimetypes
 import importlib
@@ -238,38 +239,63 @@ def process_directory(
         print(f"No supported files found in {input_dir}")
         return 0, 0, 0
     
+    # Set up output directory structure
+    if output_dir is None:
+        # If no output directory specified, create md_results in the input directory
+        output_dir = input_dir / "md_results"
+    
     # Create output directory if it doesn't exist
-    if output_dir:
-        output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create processed directory if it doesn't exist
+    processed_dir = input_dir / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
     
     success_count = 0
     error_count = 0
     skipped_count = 0
     
     print(f"Found {len(files)} supported files in {input_dir}")
+    print(f"Output directory: {output_dir}")
+    print(f"Processed files will be moved to: {processed_dir}")
     
     # Process files
     for file_path in files:
         try:
+            # Skip files that are already in md_results or processed directories
+            if "md_results" in str(file_path) or "processed" in str(file_path):
+                print(f"Skipping file in special directory: {file_path}")
+                skipped_count += 1
+                continue
+                
             # Determine output path
-            if output_dir:
-                # Preserve directory structure if recursive
-                if recursive:
-                    rel_path = file_path.relative_to(input_dir)
-                    out_path = output_dir / rel_path.with_suffix('.md')
-                    # Create parent directories if needed
-                    out_path.parent.mkdir(parents=True, exist_ok=True)
-                else:
-                    out_path = output_dir / file_path.with_suffix('.md').name
+            if recursive:
+                # Preserve directory structure
+                rel_path = file_path.relative_to(input_dir)
+                out_path = output_dir / rel_path.with_suffix('.md')
+                # Create parent directories if needed
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Determine processed file path (preserving directory structure)
+                proc_path = processed_dir / rel_path
+                proc_path.parent.mkdir(parents=True, exist_ok=True)
             else:
-                # If no output directory specified, use same directory as input
-                out_path = file_path.with_suffix('.md')
-        
+                # Flat structure
+                out_path = output_dir / file_path.with_suffix('.md').name
+                proc_path = processed_dir / file_path.name
+            
             # Process file
             result = process_single_file(file_path, out_path, sheet)
         
             if result == 0:
                 success_count += 1
+                
+                # Move the original file to the processed directory
+                try:
+                    shutil.move(str(file_path), str(proc_path))
+                    print(f"Moved {file_path} to {proc_path}")
+                except Exception as move_error:
+                    print(f"Warning: Could not move {file_path} to {proc_path}: {move_error}")
             else:
                 error_count += 1
             
@@ -322,10 +348,33 @@ def main():
             output_dir = Path(args.output_dir)
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / input_path.with_suffix('.md').name
+        elif args.output:
+            # If specific output file is specified
+            output_path = Path(args.output)
         else:
-            output_path = Path(args.output) if args.output else input_path.with_suffix('.md')
+            # Default behavior: create md_results directory in the parent directory
+            parent_dir = input_path.parent
+            output_dir = parent_dir / "md_results"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / input_path.with_suffix('.md').name
             
-        return process_single_file(input_path, output_path, args.sheet)
+            # Create processed directory
+            processed_dir = parent_dir / "processed"
+            processed_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Process the file
+        result = process_single_file(input_path, output_path, args.sheet)
+        
+        # If successful and we're using the default organization, move the original file
+        if result == 0 and not args.output and not args.output_dir:
+            try:
+                proc_path = processed_dir / input_path.name
+                shutil.move(str(input_path), str(proc_path))
+                print(f"Moved {input_path} to {proc_path}")
+            except Exception as move_error:
+                print(f"Warning: Could not move {input_path} to {proc_path}: {move_error}")
+                
+        return result
 
 
 if __name__ == "__main__":
