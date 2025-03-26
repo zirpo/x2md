@@ -9,9 +9,8 @@ Currently supports:
 - XLSX/XLS files
 - DOCX files
 - PDF files
-
-Future support planned for:
 - MSG files
+- EML files
 """
 
 import argparse
@@ -86,6 +85,30 @@ except ImportError:
     except ImportError:
         PDF2Markdown = None
 
+try:
+    # Try relative import first
+    from msg2md import MSG2Markdown
+except ImportError:
+    try:
+        # Try absolute import with script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from msg2md import MSG2Markdown
+    except ImportError:
+        MSG2Markdown = None
+
+try:
+    # Try relative import first
+    from eml2md import EML2Markdown
+except ImportError:
+    try:
+        # Try absolute import with script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from eml2md import EML2Markdown
+    except ImportError:
+        EML2Markdown = None
+
 
 class FormatDetector:
     """Detect file format and return appropriate converter class."""
@@ -113,7 +136,8 @@ class FormatDetector:
             '.xlsm': 'xlsx',
             '.docx': 'docx',
             '.pdf': 'pdf',
-            '.msg': 'msg'
+            '.msg': 'msg',
+            '.eml': 'eml'
         }
         
         detected_format = format_map.get(extension)
@@ -131,6 +155,8 @@ class FormatDetector:
                     detected_format = 'docx'
                 elif mime_type == 'application/pdf':
                     detected_format = 'pdf'
+                elif mime_type == 'message/rfc822':
+                    detected_format = 'eml'
         
         return detected_format
 
@@ -180,6 +206,10 @@ class X2Markdown:
                 converter = DOCX2Markdown(self.input_path, self.output_path)
             elif self.format == 'pdf' and PDF2Markdown:
                 converter = PDF2Markdown(self.input_path, self.output_path)
+            elif self.format == 'msg' and MSG2Markdown:
+                converter = MSG2Markdown(self.input_path, self.output_path)
+            elif self.format == 'eml' and EML2Markdown:
+                converter = EML2Markdown(self.input_path, self.output_path)
             else:
                 raise NotImplementedError(f"Conversion for {self.format} files is not yet implemented")
             
@@ -204,7 +234,7 @@ def get_supported_files(directory: Path, recursive: bool = False) -> List[Path]:
     """
     # Define supported extensions
     supported_extensions = {
-        '.csv', '.txt', '.xlsx', '.xls', '.xlsm', '.docx', '.pdf', '.msg'
+        '.csv', '.txt', '.xlsx', '.xls', '.xlsm', '.docx', '.pdf', '.msg', '.eml'
     }
     
     files = []

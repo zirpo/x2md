@@ -123,6 +123,18 @@ PDF files are converted with text and tables extracted:
 x2md document.pdf -o document.md
 ```
 
+### Outlook MSG Files (.msg)
+Outlook email messages are converted with basic content extraction:
+```
+x2md email.msg -o email.md
+```
+
+### EML Files (.eml)
+Standard email format files are converted with header and body extraction:
+```
+x2md email.eml -o email.md
+```
+
 ## Examples
 
 ### Converting a Text File
@@ -188,6 +200,8 @@ csv2md --help
 xlsx2md --help
 docx2md --help
 pdf2md --help
+msg2md --help
+eml2md --help
 ```
 
 ## What's Next?

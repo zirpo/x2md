@@ -9,10 +9,8 @@ Convert various file formats to Markdown easily.
 - **XLSX/XLS files** - Excel spreadsheets with multi-sheet support
 - **DOCX files** - Microsoft Word documents with formatting preservation
 - **PDF files** - PDF documents with table extraction support
-
-## Future Planned Support
-
-- MSG (Outlook) files
+- **MSG files** - Outlook email messages with basic content extraction
+- **EML files** - Standard email format with basic content extraction
 
 ## Installation
 
@@ -80,6 +78,12 @@ python docx2md.py input.docx -o output.md
 
 # PDF to Markdown
 python pdf2md.py input.pdf -o output.md
+
+# MSG to Markdown
+python msg2md.py input.msg -o output.md
+
+# EML to Markdown
+python eml2md.py input.eml -o output.md
 ```
 
 ## Features
@@ -110,12 +114,23 @@ python pdf2md.py input.pdf -o output.md
 - Intelligent heading detection
 - Handles multi-page documents
 
+### MSG Converter
+- Extracts email subject and sender information
+- Converts email body to Markdown format
+- Preserves paragraph structure
+
+### EML Converter
+- Processes standard email format files
+- Extracts email headers and body content
+- Handles character encoding properly
+
 ## Dependencies
 
 - pandas, tabulate: For table handling (CSV and Excel)
 - openpyxl: For Excel file processing
 - python-docx: For Word document processing
 - PyPDF2, pdfplumber: For PDF processing
+- extract-msg: For Outlook MSG file processing
 
 ## License
 
