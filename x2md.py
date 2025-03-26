@@ -27,29 +27,64 @@ from typing import List, Dict, Optional, Tuple
 # Import existing converters
 # We use try/except to handle potential import errors gracefully
 try:
+    # Try relative import first
     from csv2md import CSV2Markdown
 except ImportError:
-    CSV2Markdown = None
+    try:
+        # Try absolute import with script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from csv2md import CSV2Markdown
+    except ImportError:
+        CSV2Markdown = None
 
 try:
+    # Try relative import first
     from txt2md import TXT2Markdown
 except ImportError:
-    TXT2Markdown = None
+    try:
+        # Try absolute import with script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from txt2md import TXT2Markdown
+    except ImportError:
+        TXT2Markdown = None
 
 try:
+    # Try relative import first
     from xlsx2md import XLSX2Markdown
 except ImportError:
-    XLSX2Markdown = None
+    try:
+        # Try absolute import with script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from xlsx2md import XLSX2Markdown
+    except ImportError:
+        XLSX2Markdown = None
 
 try:
+    # Try relative import first
     from docx2md import DOCX2Markdown
 except ImportError:
-    DOCX2Markdown = None
+    try:
+        # Try absolute import with script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from docx2md import DOCX2Markdown
+    except ImportError:
+        DOCX2Markdown = None
 
 try:
+    # Try relative import first
     from pdf2md import PDF2Markdown
 except ImportError:
-    PDF2Markdown = None
+    try:
+        # Try absolute import with script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, script_dir)
+        from pdf2md import PDF2Markdown
+    except ImportError:
+        PDF2Markdown = None
 
 
 class FormatDetector:
