@@ -1,0 +1,89 @@
+<product_requirements_document>
+    <meta>
+        <version>1.0</version>
+        <type>Agent Instruction / PRD</type>
+        <target_audience>Coding Agent / Full Stack Developer</target_audience>
+    </meta>
+
+    <project_overview>
+        <name>x2md-node-poc</name>
+        <summary>
+            A standalone "Drag & Drop" web utility to convert office documents (PDF, DOCX, XLSX) and data files (CSV) into Markdown. 
+            This project serves as a Proof of Concept (POC) to validate if native Node.js libraries can match the conversion quality of the existing Python-based 'x2md' tools.
+        </summary>
+        <primary_goal>
+            Replicate the conversion logic of the Python 'x2md' repository using a pure Node.js technology stack.
+        </primary_goal>
+    </project_overview>
+
+    <context_and_assets>
+        <description>
+            The user currently has a working Python repository ('x2md') that converts various files to Markdown. 
+            The goal is to integrate this capability into a Node.js-based RAG system ('zirpmo'). 
+            Before integrating, we must prove that Node.js libraries can handle the conversion with acceptable quality.
+        </description>
+        <reference_repository>
+            <name>x2md</name>
+            <key_files>
+                <file type="logic" path="zirpo/x2md/x2md-1f15c43d27a7690d153c8c70e8de5bbde3d2e0c4/x2md.py">Orchestrator logic</file>
+                <file type="logic" path="zirpo/x2md/x2md-1f15c43d27a7690d153c8c70e8de5bbde3d2e0c4/pdf2md.py">PDF table extraction logic (Gold Standard)</file>
+                <file type="logic" path="zirpo/x2md/x2md-1f15c43d27a7690d153c8c70e8de5bbde3d2e0c4/docx2md.py">DOCX formatting logic</file>
+                <file type="logic" path="zirpo/x2md/x2md-1f15c43d27a7690d153c8c70e8de5bbde3d2e0c4/xlsx2md.py">Excel to Markdown table logic</file>
+                <file type="logic" path="zirpo/x2md/x2md-1f15c43d27a7690d153c8c70e8de5bbde3d2e0c4/csv2md.py">CSV to Markdown table logic</file>
+            </key_files>
+        </reference_repository>
+    </context_and_assets>
+
+    <technical_specifications>
+        <stack>
+            <runtime>Node.js</runtime>
+            <server>Express.js</server>
+            <middleware>Multer (for file uploads)</middleware>
+            <frontend>Vanilla HTML5 / CSS3 / JavaScript (Single 'public/index.html' file preferred)</frontend>
+        </stack>
+        <library_mapping>
+            <instruction>Use the following Node.js packages to replace the Python dependencies:</instruction>
+            <mapping source="python-docx" target="mammoth">
+                <note>Focus on extracting raw text or converting to Markdown. Keep styling minimal but readable.</note>
+            </mapping>
+            <mapping source="pdfplumber / PyPDF2" target="pdf-parse">
+                <note>Critical: This is the hardest replacement. Attempt to extract text cleanly. If tables are impossible to reconstruct perfectly in Node.js, extract them as raw text blocks.</note>
+            </mapping>
+            <mapping source="pandas (read_excel)" target="xlsx">
+                <note>Iterate through sheets and convert rows to Markdown pipe tables.</note>
+            </mapping>
+            <mapping source="pandas (read_csv)" target="csv-parse">
+                <note>Parse CSV and output standard Markdown table syntax.</note>
+            </mapping>
+        </library_mapping>
+    </technical_specifications>
+
+    <functional_requirements>
+        <user_interface>
+            <requirement>Implement a clean, minimal "Drag & Drop" zone taking up most of the screen.</requirement>
+            <requirement>Display a list of uploaded files with their conversion status.</requirement>
+            <requirement>Provide a "Download Markdown" button for successful conversions.</requirement>
+            <requirement>Show a preview of the generated Markdown in a read-only text area.</requirement>
+        </user_interface>
+        <backend_services>
+            <requirement>
+                <name>ConversionService</name>
+                <description>A modular service class that accepts a file buffer and mimetype, determines the correct strategy, and returns a Markdown string.</description>
+            </requirement>
+            <requirement>
+                <name>UploadHandler</name>
+                <description>An Express route handling 'multipart/form-data'. It should pass the file to ConversionService immediately and return the result JSON.</description>
+            </requirement>
+        </backend_services>
+    </functional_requirements>
+
+    <step_by_step_plan>
+        <step order="1">Initialize a new Node.js project (package.json).</step>
+        <step order="2">Install dependencies: express, multer, mammoth, pdf-parse, xlsx, csv-parse.</step>
+        <step order="3">Create `services/converter.js` implementing the logic to switch between formats.</step>
+        <step order="4">Create `server.js` to serve the static frontend and the `/api/convert` endpoint.</step>
+        <step order="5">Create `public/index.html` with the Drag & Drop UI and client-side logic.</step>
+        <step order="6">Verify that the output format (Markdown tables, headers) closely matches the style of the original Python scripts.</step>
+    </step_by_step_plan>
+
+</product_requirements_document>

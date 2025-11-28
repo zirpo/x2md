@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x2md Node.js POC</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        #drop-zone {
+            width: 100%;
+            max-width: 800px;
+            height: 200px;
+            border: 2px dashed #86868b;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            transition: border-color 0.3s, background-color 0.3s;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        #drop-zone.dragover {
+            border-color: #0071e3;
+            background-color: #f0f8ff;
+        }
+
+        #drop-zone p {
+            font-size: 1.2rem;
+            color: #86868b;
+            pointer-events: none;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #result-area {
+            width: 100%;
+            max-width: 800px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
+            font-size: 14px;
+            resize: none;
+            box-sizing: border-box;
+            background-color: #ffffff;
+        }
+
+        .status {
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .error {
+            color: #ff3b30;
+        }
+
+        .success {
+            color: #34c759;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>x2md Node.js POC</h1>
+
+    <div id="drop-zone">
+        <p>Drag & Drop a file here (PDF, DOCX, XLSX, CSV)</p>
+        <input type="file" id="file-input" accept=".pdf,.docx,.xlsx,.csv">
+    </div>
+
+    <div id="result-area">
+        <div id="status" class="status"></div>
+        <textarea id="markdown-output" readonly placeholder="Markdown output will appear here..."></textarea>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const statusDiv = document.getElementById('status');
+        const outputArea = document.getElementById('markdown-output');
+
+        // Drag & Drop events
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Click to upload
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+
+        async function handleFile(file) {
+            statusDiv.textContent = `Uploading and converting ${file.name}...`;
+            statusDiv.className = 'status';
+            outputArea.value = '';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusDiv.textContent = `Successfully converted ${file.name}`;
+                    statusDiv.classList.add('success');
+                    outputArea.value = data.markdown;
+                } else {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.classList.add('error');
+            }
+        }
+    </script>
+</body>
+</html>
